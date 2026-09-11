@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Supplementary Audio Matrices - TokenMapper</title>
+  <style>
+    :root{
+      --bg:#fffdf6;
+      --panel:#fffaf0;
+      --panel2:#fff6e3;
+      --text:#1a1a1a;
+      --muted:#4b4b4b;
+      --border:#e8dcc0;
+      --accent:#7a5a00;
+      --badbg: rgba(200, 60, 60, 0.08);
+      --badbd: rgba(200, 60, 60, 0.25);
+    }
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      background: linear-gradient(180deg, var(--bg), #fff9ea);
+      color: var(--text);
+    }
+    header{
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 22px 18px 10px;
+    }
+
+    /* Paper title + abstract */
+    .paper-title{
+      margin: 0 0 10px 0;
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: 0.2px;
+    }
+    .paper-abstract-wrap{
+      background: var(--panel2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin: 0 0 14px 0;
+    }
+    .paper-abstract-label{
+      font-size: 12px;
+      font-weight: 900;
+      color: var(--accent);
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      margin: 0 0 8px 0;
+    }
+    .paper-abstract{
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    h1{
+      margin: 14px 0 8px 0;
+      font-size: 20px;
+      font-weight: 850;
+      letter-spacing: 0.2px;
+    }
+    .subtitle{
+      margin:0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .wrap{
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 10px 18px 28px;
+    }
+
+    .example{
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px 14px 12px;
+      margin: 14px 0;
+    }
+    .example-head{
+      display:flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .example-title{
+      margin:0;
+      font-size: 14px;
+      font-weight: 850;
+      color: var(--accent);
+    }
+    .example-id{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .gt-row{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin: 6px 0 12px;
+      padding: 10px 12px;
+      background: var(--panel2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+    .gt-label{
+      font-size: 12px;
+      font-weight: 850;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+
+    audio{
+      width: min(520px, 100%);
+    }
+
+    table.matrix{
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #fff;
+    }
+    table.matrix th, table.matrix td{
+      border: 1px solid var(--border);
+      padding: 10px;
+      vertical-align: middle;
+      text-align: center;
+    }
+    table.matrix th{
+      background: var(--panel2);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 900;
+    }
+    .corner{
+      text-align: left !important;
+      font-weight: 900;
+      color: var(--accent);
+    }
+    .rowhdr{
+      text-align: left !important;
+      font-weight: 900;
+      color: var(--accent);
+      background: var(--panel2);
+      width: 120px;
+    }
+
+    .cell-title{
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--accent);
+      margin-bottom: 6px;
+      line-height: 1.2;
+      word-break: break-word;
+    }
+
+    .diag{
+      background: rgba(122, 90, 0, 0.06);
+    }
+
+    .missing{
+      margin-top: 8px;
+      font-size: 12px;
+
+      /* keep it in the DOM but make it invisible */
+      opacity: 0;
+      background: transparent;
+      border-color: transparent;
+      color: transparent;
+
+      /* avoid taking space / affecting layout when shown */
+      padding: 0;
+      margin-top: 0;
+      height: 0;
+      line-height: 0;
+
+      /* keep your current behavior: hidden by default */
+      display: none;
+
+      /* optional */
+      pointer-events: none;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <!-- Paper title + abstract -->
+    <div class="paper-title">TokenMapper: Towards a Universal Interoperability Layer for Speech Tokens</div>
+    <div class="paper-abstract-wrap">
+      <div class="paper-abstract-label">Abstract</div>
+      <p class="paper-abstract">
+Neural audio codecs discretize speech into token sequences, but the resulting token spaces differ in vocabulary and codebook structure, preventing direct communication across models. This limitation affects applications such as conversational voice agents and speech to speech translation systems where multiple speech models must interact. As a result, transferring information between speech systems typically requires decoding to waveform audio and re-encoding with a second tokenizer, increasing latency and introducing potential information loss. To address this limitation, we present TokenMapper, a direction aware framework for direct token to token translation between heterogeneous speech tokenizers in the discrete domain. TokenMapper supports structurally mismatched token spaces, including mappings between single codebook and multi codebook representations. Experiments on GLM-4-Voice, MiMi, and DualCodec show consistent cross model performance. Specifically, translation WER approaches native reconstructions within 2.5-6.8% absolute WER, with UTMOS between 1.95-3.38 and end to end latency reductions of 4.8-94.5%, reaching up to 972 ms per utterance relative to waveform bridging. These results demonstrate practical cross model speech interoperability without intermediate waveform reconstruction.
+    <h1>Audio Translation Matrices</h1>
+    <p class="subtitle">
+      For each example, rows are source tokenizers and columns are target tokenizers.
+      Diagonal cells are native reconstructions, off diagonal cells are cross model mappings (source→target).
+    </p>
+  </header>
+
+  <div class="wrap" id="root"></div>
+
+  <script>
+    // =========================================================
+    // EDIT ONLY THESE SETTINGS
+    // =========================================================
+    const BASE_DIR = "."; // HTML is in demo_page/
+
+    const EXAMPLE_IDS = [
+      "8555-292519-0006.flac",
+      "4446-2273-0032.flac",
+      "4077-13751-0012.flac",
+      "1284-134647-0002.flac"
+    ];
+
+    const MODELS = [
+      { key: "glm",       label: "GLM" },
+      { key: "moshi",     label: "Moshi" },
+      { key: "dualcodec", label: "DualCodec" }
+    ];
+
+    // If your site serves FLAC with a problematic MIME type, set this:
+    // (You can keep it as "" if you don't want to force anything.)
+    // Common choices: "audio/flac", "audio/wav", "audio/mpeg"
+    const FORCE_MIME = "audio/flac";
+
+    // =========================================================
+    // Path rules from your folder structure
+    // =========================================================
+    function pathGT(id) { return `${BASE_DIR}/gt/${id}`; }
+    function pathNative(modelKey, id) { return `${BASE_DIR}/${modelKey}/${id}`; }
+    function pathMap(srcKey, tgtKey, id) { return `${BASE_DIR}/${srcKey}2${tgtKey}/${id}`; }
+
+    // =========================================================
+    // UI helpers
+    // =========================================================
+    function mkAudio(src) {
+      const wrap = document.createElement("div");
+
+      const audio = document.createElement("audio");
+      audio.controls = true;
+      audio.preload = "none";
+
+      // Using <source> is more robust than audio.src alone.
+      const source = document.createElement("source");
+      source.src = src;
+      if (FORCE_MIME) source.type = FORCE_MIME;
+      audio.appendChild(source);
+
+      // Fallback text (visible only if audio element unsupported)
+      audio.appendChild(document.createTextNode("Your browser does not support the audio element."));
+
+      const missing = document.createElement("div");
+      missing.className = "missing";
+      missing.textContent =
+        "Could not load audio. If this is FLAC, try Chrome,  ";
+
+      let becamePlayable = false;
+      audio.addEventListener("canplay", () => { becamePlayable = true; });
+
+      audio.addEventListener("error", () => { missing.style.display = "block"; });
+
+      // If it never becomes playable after a short delay, show the warning.
+      // (Helps catch silent decode failures where the play button never appears.)
+      setTimeout(() => {
+        if (!becamePlayable && audio.readyState === 0) {
+          missing.style.display = "block";
+        }
+      }, 1200);
+
+      wrap.appendChild(audio);
+      wrap.appendChild(missing);
+      return wrap;
+    }
+
+    function buildExampleSection(exampleId) {
+      const section = document.createElement("div");
+      section.className = "example";
+
+      const head = document.createElement("div");
+      head.className = "example-head";
+
+      const title = document.createElement("p");
+      title.className = "example-title";
+      title.textContent = "Example";
+
+      const mono = document.createElement("div");
+      mono.className = "example-id";
+      mono.textContent = exampleId;
+
+      head.appendChild(title);
+      head.appendChild(mono);
+      section.appendChild(head);
+
+      // Ground truth row
+      const gtRow = document.createElement("div");
+      gtRow.className = "gt-row";
+
+      const gtLabel = document.createElement("div");
+      gtLabel.className = "gt-label";
+      gtLabel.textContent = "Ground truth";
+
+      gtRow.appendChild(gtLabel);
+      gtRow.appendChild(mkAudio(pathGT(exampleId)));
+      section.appendChild(gtRow);
+
+      // Matrix table
+      const table = document.createElement("table");
+      table.className = "matrix";
+
+      const thead = document.createElement("thead");
+      const htr = document.createElement("tr");
+
+      const corner = document.createElement("th");
+      corner.className = "corner";
+      corner.textContent = "Source \\ Target";
+      htr.appendChild(corner);
+
+      MODELS.forEach(m => {
+        const th = document.createElement("th");
+        th.textContent = m.label;
+        htr.appendChild(th);
+      });
+
+      thead.appendChild(htr);
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+
+      MODELS.forEach(src => {
+        const tr = document.createElement("tr");
+
+        const rowhdr = document.createElement("th");
+        rowhdr.className = "rowhdr";
+        rowhdr.textContent = src.label;
+        tr.appendChild(rowhdr);
+
+        MODELS.forEach(tgt => {
+          const td = document.createElement("td");
+
+          const isDiag = (src.key === tgt.key);
+          if (isDiag) td.classList.add("diag");
+
+          const cellTitle = document.createElement("div");
+          cellTitle.className = "cell-title";
+          cellTitle.textContent = isDiag ? "Native" : `${src.label} \u2192 ${tgt.label}`;
+
+          const audioPath = isDiag
+            ? pathNative(tgt.key, exampleId)
+            : pathMap(src.key, tgt.key, exampleId);
+
+          td.appendChild(cellTitle);
+          td.appendChild(mkAudio(audioPath));
+          tr.appendChild(td);
+        });
+
+        tbody.appendChild(tr);
+      });
+
+      table.appendChild(tbody);
+      section.appendChild(table);
+
+      return section;
+    }
+
+    function render() {
+      const root = document.getElementById("root");
+      root.innerHTML = "";
+      EXAMPLE_IDS.forEach(id => root.appendChild(buildExampleSection(id)));
+    }
+
+    render();
+  </script>
+</body>
+</html>
